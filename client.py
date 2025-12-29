@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import asyncpg
 import uvicorn
+from fastapi.responses import HTMLResponse
 
 from db import host, port, user, password, db_name
 from models import Restaraunt, pizza, chef, review
@@ -14,6 +15,20 @@ async def get_db():
     return conn
 
 
+@app.get("/", response_class=HTMLResponse)
+async def read_items():
+    return """
+    <html>
+        <head>
+            <title>Authorization</title>
+        </head>
+        <body>
+            <h1>Loading...</h1>
+        </body>
+    </html>
+    """
+
+
 @app.get("/rest", response_model=list[Restaraunt], tags=["rest"])
 async def get_rest():
     conn = await get_db()
@@ -21,7 +36,7 @@ async def get_rest():
     await conn.close()
     return [Restaraunt(**dict(row)) for row in rows]
 
-@app.post("/rest/post", response_model=Restaraunt, tags=["rest"])
+@app.post("/rest", response_model=Restaraunt, tags=["rest"])
 async def post_rest(rest_: Restaraunt):
     conn = await get_db()
     row = await conn.fetchrow(
@@ -34,6 +49,13 @@ async def post_rest(rest_: Restaraunt):
     )
     await conn.close()
     return Restaraunt(**dict(row))
+
+@app.delete("/rest/delete/{id_}", response_model=list[Restaraunt], tags=["rest"])
+async def del_rest(id_: int):
+    conn = await get_db()
+    rows = await conn.fetch("DELETE FROM restaraunts WHERE id = $1", id_)
+    await conn.close()
+    return [Restaraunt(**dict(row)) for row in rows]
 
 @app.get("/restaurants/{id}/menu/", tags=["rest"])
 async def get_menu(id_: int):
@@ -51,7 +73,7 @@ async def get_chef():
     await conn.close()
     return [chef(**dict(row)) for row in rows]
 
-@app.post("/chef/post", response_model=chef, tags=["chef"])
+@app.post("/chef", response_model=chef, tags=["chef"])
 async def post_chef(chef_: chef):
     conn = await get_db()
     row = await conn.fetchrow(
@@ -65,6 +87,12 @@ async def post_chef(chef_: chef):
     await conn.close()
     return chef(**dict(row))
 
+@app.delete("/chef/delete/{id_}", response_model=list[chef], tags=["chef"])
+async def del_chef(id_: int):
+    conn = await get_db()
+    rows = await conn.fetch("DELETE FROM chefs WHERE id = $1", id_)
+    await conn.close()
+    return [chef(**dict(row)) for row in rows]
 
 @app.get("/pizza", response_model=list[pizza], tags=["pizza"])
 async def get_pizza():
@@ -80,7 +108,7 @@ async def get_ingr(id_: int):
     await conn.close()
     return (row)
 
-@app.post("/pizza/post", response_model=pizza, tags=["pizza"])
+@app.post("/pizza", response_model=pizza, tags=["pizza"])
 async def post_pizza(pizza_: pizza):
     conn = await get_db()
     row = await conn.fetchrow(
@@ -131,7 +159,7 @@ async def get_review():
     await conn.close()
     return [review(**dict(row)) for row in rows]
 
-@app.post("/review/post", response_model=review, tags=["reviews"])
+@app.post("/review", response_model=review, tags=["reviews"])
 async def post_review(review_: review):
     conn = await get_db()
     row = await conn.fetchrow(
@@ -145,5 +173,10 @@ async def post_review(review_: review):
     await conn.close()
     return review(**dict(row))
 
-
+@app.delete("/review/delete/{id_}", response_model=list[review], tags=["reviews"])
+async def del_review(id_: int):
+    conn = await get_db()
+    rows = await conn.fetch("DELETE FROM reviews WHERE id = $1", id_)
+    await conn.close()
+    return [review(**dict(row)) for row in rows]
 
