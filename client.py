@@ -180,3 +180,4 @@ async def del_review(id_: int):
     await conn.close()
     return [review(**dict(row)) for row in rows]
 
+# Форк тест
